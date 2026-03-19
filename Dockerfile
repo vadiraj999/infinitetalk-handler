@@ -48,7 +48,7 @@ COPY handler.py /handler.py
 ENV WEIGHTS_DIR=/workspace/weights
 ENV HF_HOME=/workspace/hf_cache
 ENV TRANSFORMERS_CACHE=/workspace/hf_cache
-ENV TRANSFORMERS_OFFLINE=0   # allow online download during build
+ENV TRANSFORMERS_OFFLINE=0   
 
 
 RUN mkdir -p /workspace/hf_cache
