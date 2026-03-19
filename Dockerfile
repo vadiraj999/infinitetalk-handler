@@ -42,8 +42,8 @@ RUN pip install --no-cache-dir \
 COPY handler.py /handler.py
 
 ENV WEIGHTS_DIR=/runpod-volume/weights
-ENV HF_HOME=/runpod-volume/weights/hf_cache
-ENV TRANSFORMERS_CACHE=/runpod-volume/weights/hf_cache
+ENV HF_HOME=/runpod-volume/hf_cache
+ENV TRANSFORMERS_CACHE=/runpod-volume/hf_cache
 ENV HF_HUB_OFFLINE=1
 
 CMD ["python", "/handler.py"]
