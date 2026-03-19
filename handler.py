@@ -52,11 +52,10 @@ def validate_weights():
         )
     print("[handler] ✓ All weights found", flush=True)
 
-validate_weights()
-
 
 # ── Main handler ──────────────────────────────────────────────────────────────
 def handler(job):
+    validate_weights()  # check weights on every job — safe, fast, catches mount issues early
     job_input = job.get("input", {})
     t_start   = time.time()
 
