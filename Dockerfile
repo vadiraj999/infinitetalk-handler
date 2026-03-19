@@ -49,9 +49,11 @@ ENV HF_HOME=/runpod-volume/weights/hf_cache
 ENV TRANSFORMERS_CACHE=/runpod-volume/weights/hf_cache
 ENV TRANSFORMERS_OFFLINE=1
 
-
 # Make sure the HF cache folder exists
 RUN mkdir -p /runpod-volume/weights/hf_cache
+
+# Install transformers
+RUN pip install --no-cache-dir transformers
 
 # Pre-download xlm-roberta-large tokenizer into the cache
 RUN python3 -c "\
