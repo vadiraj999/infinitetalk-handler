@@ -44,6 +44,8 @@ RUN pip install --no-cache-dir \
     runpod \
     huggingface_hub
 
+RUN pip install --no-cache-dir "transformers==4.49.0"
+
 COPY handler.py /handler.py
 
 ENV WEIGHTS_DIR=/runpod-volume/weights
