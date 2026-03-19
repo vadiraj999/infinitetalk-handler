@@ -54,6 +54,7 @@ RUN pip install --no-cache-dir \
     soundfile \
     huggingface_hub
 
+RUN pip install --no-cache-dir diffusers==0.30.3 transformers accelerate
 RUN pip install --no-cache-dir -r /infinitetalk/requirements.txt
 
 # flash-attn (compiled — takes a few minutes)
