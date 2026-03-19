@@ -47,5 +47,19 @@ ENV WEIGHTS_DIR=/runpod-volume/weights
 
 ENV HF_HOME=/runpod-volume/weights/hf_cache
 ENV TRANSFORMERS_CACHE=/runpod-volume/weights/hf_cache
+ENV TRANSFORMERS_OFFLINE=1
+
+
+# Make sure the HF cache folder exists
+RUN mkdir -p /runpod-volume/weights/hf_cache
+
+# Pre-download xlm-roberta-large tokenizer into the cache
+RUN python3 -c "\
+from transformers import AutoTokenizer;\
+AutoTokenizer.from_pretrained('xlm-roberta-large', cache_dir='/runpod-volume/weights/hf_cache')\
+"
+
+# Lock the cache to prevent parallel worker corruption
+RUN chmod -R 555 /runpod-volume/weights/hf_cache
 
 CMD ["python", "/handler.py"]
