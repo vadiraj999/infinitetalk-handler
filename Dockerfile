@@ -21,9 +21,8 @@ RUN git clone https://github.com/MeiGen-AI/InfiniteTalk.git /infinitetalk
 # Fix 1: ArgSpec removed in Python 3.11
 RUN sed -i 's/from inspect import ArgSpec/from inspect import FullArgSpec as ArgSpec/' /infinitetalk/wan/multitalk.py
 
-# Fix 2: Patch tokenizer to use local cache from env var
-RUN sed -i 's/self\.tokenizer = AutoTokenizer\.from_pretrained(name,/self.tokenizer = AutoTokenizer.from_pretrained(name, cache_dir=os.environ.get("HF_HOME"),/' /infinitetalk/wan/modules/tokenizers.py
-RUN sed -i '1s/^/import os\n/' /infinitetalk/wan/modules/tokenizers.py
+# Fix 2: Patch tokenizer to use hardcoded local cache path
+RUN sed -i 's/self\.tokenizer = AutoTokenizer\.from_pretrained(name,/self.tokenizer = AutoTokenizer.from_pretrained(name, cache_dir="\/runpod-volume\/hf_cache",/' /infinitetalk/wan/modules/tokenizers.py
 
 WORKDIR /infinitetalk
 
