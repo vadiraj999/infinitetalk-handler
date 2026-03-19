@@ -65,3 +65,4 @@ AutoTokenizer.from_pretrained('xlm-roberta-large', cache_dir='/runpod-volume/wei
 RUN chmod -R 555 /runpod-volume/weights/hf_cache
 
 CMD ["python", "/handler.py"]
+ 
