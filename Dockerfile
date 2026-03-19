@@ -21,8 +21,11 @@ RUN git clone https://github.com/MeiGen-AI/InfiniteTalk.git /infinitetalk
 # Fix 1: ArgSpec removed in Python 3.11
 RUN sed -i 's/from inspect import ArgSpec/from inspect import FullArgSpec as ArgSpec/' /infinitetalk/wan/multitalk.py
 
-# Fix 2: Patch tokenizer to use hardcoded local cache path
-RUN sed -i 's/self\.tokenizer = AutoTokenizer\.from_pretrained(name,/self.tokenizer = AutoTokenizer.from_pretrained(name, cache_dir="\/runpod-volume\/hf_cache",/' /infinitetalk/wan/modules/tokenizers.py
+# Fix 2: Force tokenizer to load from local weights
+RUN sed -i 's|AutoTokenizer.from_pretrained(name,|AutoTokenizer.from_pretrained("/runpod-volume/weights/xlm-roberta-large", local_files_only=True,|g' /infinitetalk/wan/modules/tokenizers.py
+
+# Fix 3: Force UMT5 model to load locally
+RUN grep -rl 'google/umt5-xxl' /infinitetalk | xargs sed -i 's|"google/umt5-xxl"|"/runpod-volume/weights/google-umt5-xxl"|g'
 
 WORKDIR /infinitetalk
 
