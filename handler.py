@@ -116,11 +116,21 @@ def handler(job):
         print(f"[handler] Running InfiniteTalk (steps={steps}, res={resolution})...", flush=True)
         t_gen = time.time()
 
+        # Pass env vars explicitly so HF_HOME reaches the subprocess
+        import copy
+        sub_env = copy.deepcopy(dict(os.environ))
+        hf_cache = str(Path(os.environ.get("WEIGHTS_DIR", "/runpod-volume/weights")).parent / "hf_cache")
+        sub_env["HF_HOME"] = hf_cache
+        sub_env["TRANSFORMERS_CACHE"] = hf_cache
+        sub_env["HF_HUB_OFFLINE"] = "1"
+        sub_env["TRANSFORMERS_OFFLINE"] = "1"
+
         result = subprocess.run(
             cmd,
             cwd=str(INFINITETALK_DIR),
-            capture_output=False,   # stream logs to RunPod console
-            timeout=7200,           # 2 hour hard limit per job
+            capture_output=False,
+            timeout=7200,
+            env=sub_env,
         )
 
         if result.returncode != 0:
