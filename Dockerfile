@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     ffmpeg \
     libsndfile1 \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Set python alternatives
@@ -36,18 +37,23 @@ COPY handler.py /handler.py
 
 # Set cache and weights directories
 ENV WEIGHTS_DIR=/workspace/weights
-ENV HF_HOME=/workspace/hf_cache
-ENV TRANSFORMERS_CACHE=/workspace/hf_cache
-ENV TRANSFORMERS_OFFLINE=0
+ENV HF_HOME=/workspace/weights/hf_cache
+ENV TRANSFORMERS_CACHE=/workspace/weights/hf_cache
+ENV TRANSFORMERS_OFFLINE=1   # offline mode, use only preloaded cache
 
-# Create HF cache folder
-RUN mkdir -p /workspace/hf_cache
+# Make sure weights and HF cache folders exist
+RUN mkdir -p /workspace/weights/hf_cache
 
-# Pre-download tokenizer
-RUN python3 -c "from transformers import AutoTokenizer; AutoTokenizer.from_pretrained('xlm-roberta-large', cache_dir='/workspace/hf_cache')"
+# -------------------------------
+# COPY YOUR PRE-DOWNLOADED HF CACHE ZIP
+# -------------------------------
+# Make sure you have hf_cache.zip in the same folder as this Dockerfile
+ADD hf_cache.zip /tmp/hf_cache.zip
+RUN unzip /tmp/hf_cache.zip -d /workspace/weights/hf_cache \
+    && rm /tmp/hf_cache.zip
 
-# Lock cache permissions
-RUN chmod -R 555 /workspace/hf_cache
+# Lock cache permissions to prevent corruption
+RUN chmod -R 555 /workspace/weights/hf_cache
 
 # Run your handler
 CMD ["python", "/handler.py"]
