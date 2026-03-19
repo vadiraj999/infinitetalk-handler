@@ -41,28 +41,29 @@ RUN pip install --no-cache-dir \
     runpod \
     huggingface_hub
 
+# Copy your handler
 COPY handler.py /handler.py
 
-ENV WEIGHTS_DIR=/runpod-volume/weights
+# Use a workspace folder for weights and HF cache
+ENV WEIGHTS_DIR=/workspace/weights
+ENV HF_HOME=/workspace/hf_cache
+ENV TRANSFORMERS_CACHE=/workspace/hf_cache
+ENV TRANSFORMERS_OFFLINE=0   # allow online download during build
 
-ENV HF_HOME=/runpod-volume/weights/hf_cache
-ENV TRANSFORMERS_CACHE=/runpod-volume/weights/hf_cache
-ENV TRANSFORMERS_OFFLINE=1
+# Make sure the cache folder exists
+RUN mkdir -p /workspace/hf_cache
 
-# Make sure the HF cache folder exists
-RUN mkdir -p /runpod-volume/weights/hf_cache
-
-# Install transformers
+# Install transformers before using it
 RUN pip install --no-cache-dir transformers
 
 # Pre-download xlm-roberta-large tokenizer into the cache
 RUN python3 -c "\
 from transformers import AutoTokenizer;\
-AutoTokenizer.from_pretrained('xlm-roberta-large', cache_dir='/runpod-volume/weights/hf_cache')\
+AutoTokenizer.from_pretrained('xlm-roberta-large', cache_dir='/workspace/hf_cache')\
 "
 
 # Lock the cache to prevent parallel worker corruption
-RUN chmod -R 555 /runpod-volume/weights/hf_cache
+RUN chmod -R 555 /workspace/hf_cache
 
+# Start your handler
 CMD ["python", "/handler.py"]
- 
