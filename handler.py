@@ -124,6 +124,7 @@ def handler(job):
         sub_env["TRANSFORMERS_CACHE"] = hf_cache
         sub_env["HF_HUB_OFFLINE"] = "1"
         sub_env["TRANSFORMERS_OFFLINE"] = "1"
+        sub_env["WEIGHTS_DIR"] = str(WEIGHTS_DIR)
 
         result = subprocess.run(
             cmd,
