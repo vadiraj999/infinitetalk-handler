@@ -24,16 +24,14 @@ RUN git clone https://github.com/MeiGen-AI/InfiniteTalk.git /infinitetalk
 # Fix 1: ArgSpec removed in Python 3.11
 RUN sed -i 's/from inspect import ArgSpec/from inspect import FullArgSpec as ArgSpec/' /infinitetalk/wan/multitalk.py
 
-# Fix 2a: Add missing import os to tokenizers.py if not present
-RUN grep -qxF 'import os' /infinitetalk/wan/modules/tokenizers.py || sed -i '1iimport os' /infinitetalk/wan/modules/tokenizers.py
-
-# Fix 2b: Force all tokenizers to load from local weights dynamically
+# Fix 2: Add missing import os and force tokenizers to load from local weights
+RUN sed -i '1i import os' /infinitetalk/wan/modules/tokenizers.py
 RUN sed -i 's|AutoTokenizer.from_pretrained(name,|AutoTokenizer.from_pretrained(os.path.join(os.environ.get("WEIGHTS_DIR","/runpod-volume/weights"), name), local_files_only=True,|g' /infinitetalk/wan/modules/tokenizers.py
 
-# Fix 3: Replace UMT5 path everywhere with local folder
+# Fix 3: Ensure UMT5 tokenizer points to correct folder name
 RUN grep -rl 'google/umt5-xxl' /infinitetalk | xargs sed -i 's|google/umt5-xxl|google-umt5-xxl|g'
 
-# Fix 4: Replace XLM-R path everywhere with local folder
+# Fix 4: Ensure XLM-R tokenizer points to correct folder name
 RUN grep -rl 'xlm-roberta-large' /infinitetalk | xargs sed -i 's|xlm-roberta-large|xlm-roberta-large|g'
 
 # Set working directory
