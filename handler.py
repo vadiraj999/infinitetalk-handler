@@ -20,6 +20,7 @@ Input JSON:
 """
 
 import base64
+import gc
 import json
 import os
 import subprocess
@@ -32,12 +33,13 @@ from pathlib import Path
 import runpod
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-WEIGHTS_DIR     = Path(os.environ.get("WEIGHTS_DIR", "/workspace/weights"))
+WEIGHTS_DIR      = Path(os.environ.get("WEIGHTS_DIR", "/workspace/weights"))
 INFINITETALK_DIR = Path("/infinitetalk")   # cloned repo baked into Docker image
 
-CKPT_DIR      = WEIGHTS_DIR / "Wan2.1-I2V-14B-480P"
-WAV2VEC_DIR   = WEIGHTS_DIR / "chinese-wav2vec2-base"
-IT_WEIGHTS    = WEIGHTS_DIR / "InfiniteTalk" / "single" / "infinitetalk.safetensors"
+CKPT_DIR     = WEIGHTS_DIR / "Wan2.1-I2V-14B-480P"
+WAV2VEC_DIR  = WEIGHTS_DIR / "chinese-wav2vec2-base"
+IT_WEIGHTS   = WEIGHTS_DIR / "InfiniteTalk" / "single" / "infinitetalk.safetensors"
+
 
 # ── Validate weights on cold start ────────────────────────────────────────────
 def validate_weights():
@@ -55,7 +57,19 @@ def validate_weights():
 
 # ── Main handler ──────────────────────────────────────────────────────────────
 def handler(job):
-    validate_weights()  # check weights on every job — safe, fast, catches mount issues early
+    # ── Force GPU cleanup from any previous job ───────────────────────────────
+    try:
+        import torch
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+            free_gb = (torch.cuda.mem_get_info()[0]) / 1024**3
+            print(f"[handler] GPU free memory at job start: {free_gb:.1f} GB", flush=True)
+    except Exception as e:
+        print(f"[handler] ⚠ GPU cleanup warning: {e}", flush=True)
+
+    validate_weights()
     job_input = job.get("input", {})
     t_start   = time.time()
 
@@ -102,16 +116,17 @@ def handler(job):
         cmd = [
             sys.executable,
             str(INFINITETALK_DIR / "generate_infinitetalk.py"),
-            "--ckpt_dir",          str(CKPT_DIR),
-            "--wav2vec_dir",       str(WAV2VEC_DIR),
-            "--infinitetalk_dir",  str(IT_WEIGHTS),
-            "--input_json",        str(input_json),
-            "--size",              f"infinitetalk-{resolution.replace('p','')}",
-            "--sample_steps",      str(steps),
+            "--ckpt_dir",                    str(CKPT_DIR),
+            "--wav2vec_dir",                 str(WAV2VEC_DIR),
+            "--infinitetalk_dir",            str(IT_WEIGHTS),
+            "--input_json",                  str(input_json),
+            "--size",                        f"infinitetalk-{resolution.replace('p','')}",
+            "--sample_steps",                str(steps),
             "--num_persistent_param_in_dit", "0",
-            "--mode",              "streaming",
-            "--motion_frame",      str(motion_f),
-            "--save_file",         str(tmpdir / "output"),
+            "--mode",                        "streaming",
+            "--motion_frame",                str(motion_f),
+            "--save_file",                   str(tmpdir / "output"),
+            "--t5_cpu",       # keeps UMT5 text encoder on CPU (~10 GB saved on GPU)
         ]
 
         print(f"[handler] Running InfiniteTalk (steps={steps}, res={resolution})...", flush=True)
@@ -121,11 +136,12 @@ def handler(job):
         import copy
         sub_env = copy.deepcopy(dict(os.environ))
         hf_cache = str(Path(os.environ.get("WEIGHTS_DIR", "/runpod-volume/weights")).parent / "hf_cache")
-        sub_env["HF_HOME"] = hf_cache
-        sub_env["TRANSFORMERS_CACHE"] = hf_cache
-        sub_env["HF_HUB_OFFLINE"] = "1"
-        sub_env["TRANSFORMERS_OFFLINE"] = "1"
-        sub_env["WEIGHTS_DIR"] = str(WEIGHTS_DIR)
+        sub_env["HF_HOME"]                     = hf_cache
+        sub_env["TRANSFORMERS_CACHE"]          = hf_cache
+        sub_env["HF_HUB_OFFLINE"]             = "1"
+        sub_env["TRANSFORMERS_OFFLINE"]       = "1"
+        sub_env["WEIGHTS_DIR"]                 = str(WEIGHTS_DIR)
+        sub_env["PYTORCH_CUDA_ALLOC_CONF"]     = "expandable_segments:True,max_split_size_mb:512"
 
         result = subprocess.run(
             cmd,
@@ -154,11 +170,11 @@ def handler(job):
 
         total_time = time.time() - t_start
         return {
-            "video": video_b64,
-            "video_ext": "mp4",
-            "generation_time_seconds": round(gen_time),
-            "total_time_seconds": round(total_time),
-            "size_mb": round(size_mb, 1),
+            "video":                    video_b64,
+            "video_ext":                "mp4",
+            "generation_time_seconds":  round(gen_time),
+            "total_time_seconds":       round(total_time),
+            "size_mb":                  round(size_mb, 1),
         }
 
 
