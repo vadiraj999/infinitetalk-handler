@@ -91,7 +91,7 @@ def handler(job):
         # Build the input JSON that InfiniteTalk expects
         input_data = [
             {
-                "image": str(image_path),
+                "cond_image": str(image_path),
                 "audio": str(audio_path)
             }
         ]
@@ -108,6 +108,7 @@ def handler(job):
             "--size",              f"infinitetalk-{resolution.replace('p','')}",
             "--sample_steps",      str(steps),
             "--num_persistent_param_in_dit", "0",
+            "--offload_model",
             "--mode",              "streaming",
             "--motion_frame",      str(motion_f),
             "--save_file",         str(tmpdir / "output"),
