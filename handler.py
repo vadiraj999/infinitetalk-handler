@@ -89,12 +89,13 @@ def handler(job):
         print(f"[handler] Audio: {audio_path.name} ({audio_path.stat().st_size/1024:.0f} KB)", flush=True)
 
         # Build the input JSON that InfiniteTalk expects
-        input_data = [
-            {
-                "cond_image": str(image_path),
-                "audio": str(audio_path)
+        input_data = {
+            "prompt": "A person talking naturally",
+            "cond_video": str(image_path),
+            "cond_audio": {
+                "person1": str(audio_path)
             }
-        ]
+        }
         input_json.write_text(json.dumps(input_data))
 
         # Build the generate command
@@ -108,7 +109,6 @@ def handler(job):
             "--size",              f"infinitetalk-{resolution.replace('p','')}",
             "--sample_steps",      str(steps),
             "--num_persistent_param_in_dit", "0",
-            "--offload_model",
             "--mode",              "streaming",
             "--motion_frame",      str(motion_f),
             "--save_file",         str(tmpdir / "output"),
