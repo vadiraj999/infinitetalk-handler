@@ -32,6 +32,9 @@ RUN grep -rl 'google/umt5-xxl' /infinitetalk | xargs sed -i 's|google/umt5-xxl|g
 RUN sed -i 's/from safetensors.torch import load_file/from safetensors.torch import load_file\nfrom safetensors import safe_open/' /infinitetalk/wan/multitalk.py
 RUN sed -i 's/                    sd = load_file(weight_file)/                    with safe_open(weight_file, framework="pt", device="cpu") as _f:\n                        sd = {k: _f.get_tensor(k) for k in _f.keys()}/' /infinitetalk/wan/multitalk.py
 
+# Fix 5: Remove flash attention assertion - use xformers fallback instead
+RUN sed -i 's/assert FLASH_ATTN_2_AVAILABLE/pass  # assert FLASH_ATTN_2_AVAILABLE/' /infinitetalk/wan/modules/attention.py
+
 WORKDIR /infinitetalk
 
 RUN pip install --no-cache-dir \
