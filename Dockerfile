@@ -25,13 +25,13 @@ RUN git clone https://github.com/MeiGen-AI/InfiniteTalk.git /infinitetalk
 RUN sed -i 's/from inspect import ArgSpec/from inspect import FullArgSpec as ArgSpec/' /infinitetalk/wan/multitalk.py
 
 # Fix 2: Force all tokenizers to load from local weights dynamically
-RUN sed -i 's|AutoTokenizer.from_pretrained(name,|AutoTokenizer.from_pretrained("/runpod-volume/weights/" + name, local_files_only=True,|g' /infinitetalk/wan/modules/tokenizers.py
+RUN sed -i 's|AutoTokenizer.from_pretrained(name,|AutoTokenizer.from_pretrained(os.path.join(os.environ.get("WEIGHTS_DIR","/runpod-volume/weights"), name), local_files_only=True,|g' /infinitetalk/wan/modules/tokenizers.py
 
-# Fix 3: Replace UMT5 path everywhere
-RUN grep -rl 'google/umt5-xxl' /infinitetalk | xargs sed -i 's|google/umt5-xxl|/runpod-volume/weights/google-umt5-xxl|g'
+# Fix 3: Replace UMT5 path everywhere with folder name only
+RUN grep -rl 'google/umt5-xxl' /infinitetalk | xargs sed -i 's|google/umt5-xxl|google-umt5-xxl|g'
 
-# Fix 4: Replace XLM-R path everywhere
-RUN grep -rl 'xlm-roberta-large' /infinitetalk | xargs sed -i 's|xlm-roberta-large|/runpod-volume/weights/xlm-roberta-large|g'
+# Fix 4: Replace XLM-R path everywhere with folder name only
+RUN grep -rl 'xlm-roberta-large' /infinitetalk | xargs sed -i 's|xlm-roberta-large|xlm-roberta-large|g'
 
 # Set working directory
 WORKDIR /infinitetalk
