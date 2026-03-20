@@ -27,6 +27,9 @@ RUN sed -i 's|AutoTokenizer.from_pretrained(name,|AutoTokenizer.from_pretrained(
 # Fix 3: Force UMT5 model to load locally
 RUN grep -rl 'google/umt5-xxl' /infinitetalk | xargs sed -i 's|"google/umt5-xxl"|"/runpod-volume/weights/google-umt5-xxl"|g'
 
+# Fix 4: Replace all xlm-roberta references
+RUN grep -rl 'xlm-roberta-large' /infinitetalk | xargs sed -i 's|"xlm-roberta-large"|"/runpod-volume/weights/xlm-roberta-large"|g'
+
 WORKDIR /infinitetalk
 
 RUN pip install --no-cache-dir \
