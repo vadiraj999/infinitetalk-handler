@@ -73,4 +73,4 @@ ENV TRANSFORMERS_CACHE=/runpod-volume/hf_cache
 ENV HF_HUB_OFFLINE=1
 ENV TRANSFORMERS_OFFLINE=1
 
-CMD ["python", "/handler.py"]
+CMD ["python", "/handler.py"] 
