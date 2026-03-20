@@ -38,6 +38,8 @@ RUN sed -i 's/                    sd = load_file(weight_file)/                  
 COPY patch_attention.py /patch_attention.py
 RUN python3 /patch_attention.py
 
+# Fix 6: context list → tensor fix for t5_cpu mode in multitalk_model.py
+RUN sed -i 's/x\[0\] = x\[0\]\.to(context\[0\]\.dtype)/x[0] = x[0].to(context[0].dtype if hasattr(context[0], "dtype") else x[0].dtype)/' /infinitetalk/wan/modules/multitalk_model.py
 WORKDIR /infinitetalk
 
 # PyTorch with CUDA 12.1
