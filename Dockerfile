@@ -28,20 +28,9 @@ RUN sed -i 's|AutoTokenizer.from_pretrained(name,|AutoTokenizer.from_pretrained(
 # Fix 3: Rename google/umt5-xxl to google-umt5-xxl to avoid path separator issues
 RUN grep -rl 'google/umt5-xxl' /infinitetalk | xargs sed -i 's|google/umt5-xxl|google-umt5-xxl|g'
 
-# Fix 4: Use memory-mapped loading for safetensors to handle large files over NFS
+# Fix 4: Use memory-mapped safe_open instead of load_file for large NFS files
 RUN sed -i 's/from safetensors.torch import load_file/from safetensors.torch import load_file\nfrom safetensors import safe_open/' /infinitetalk/wan/multitalk.py
-RUN python3 -c "
-content = open('/infinitetalk/wan/multitalk.py').read()
-old = '''                for weight_file in weight_files:
-                    sd = load_file(weight_file)
-                    merged_state_dict.update(sd)'''
-new = '''                for weight_file in weight_files:
-                    with safe_open(weight_file, framework=\"pt\", device=\"cpu\") as f:
-                        sd = {k: f.get_tensor(k) for k in f.keys()}
-                    merged_state_dict.update(sd)'''
-open('/infinitetalk/wan/multitalk.py', 'w').write(content.replace(old, new))
-print('patched')
-"
+RUN sed -i 's/                    sd = load_file(weight_file)/                    with safe_open(weight_file, framework="pt", device="cpu") as _f:\n                        sd = {k: _f.get_tensor(k) for k in _f.keys()}/' /infinitetalk/wan/multitalk.py
 
 WORKDIR /infinitetalk
 
@@ -73,4 +62,4 @@ ENV TRANSFORMERS_CACHE=/runpod-volume/hf_cache
 ENV HF_HUB_OFFLINE=1
 ENV TRANSFORMERS_OFFLINE=1
 
-CMD ["python", "/handler.py"] 
+CMD ["python", "/handler.py"]
