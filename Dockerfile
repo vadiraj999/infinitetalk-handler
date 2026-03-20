@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     ffmpeg \
     libsndfile1 \
+    ninja-build \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
@@ -38,16 +40,20 @@ RUN python3 /patch_attention.py
 
 WORKDIR /infinitetalk
 
+# PyTorch with CUDA 12.1
 RUN pip install --no-cache-dir \
     torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
     --index-url https://download.pytorch.org/whl/cu121
 
+# xformers
 RUN pip install --no-cache-dir \
     xformers==0.0.28.post3 \
     --index-url https://download.pytorch.org/whl/cu121
 
+# InfiniteTalk requirements
 RUN pip install --no-cache-dir -r /infinitetalk/requirements.txt
 
+# Extra deps + pinned versions
 RUN pip install --no-cache-dir \
     soundfile \
     librosa \
@@ -58,6 +64,10 @@ RUN pip install --no-cache-dir \
     "safetensors==0.7.0" \
     protobuf
 
+# flash-attn — required for memory-efficient attention on A100
+# Uses devel base image for CUDA headers needed to compile
+RUN pip install --no-cache-dir flash-attn==2.7.4.post1 --no-build-isolation
+
 COPY handler.py /handler.py
 
 ENV WEIGHTS_DIR=/runpod-volume/weights
@@ -65,5 +75,6 @@ ENV HF_HOME=/runpod-volume/hf_cache
 ENV TRANSFORMERS_CACHE=/runpod-volume/hf_cache
 ENV HF_HUB_OFFLINE=1
 ENV TRANSFORMERS_OFFLINE=1
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 CMD ["python", "/handler.py"]
