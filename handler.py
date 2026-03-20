@@ -122,11 +122,13 @@ def handler(job):
             "--input_json",                  str(input_json),
             "--size",                        f"infinitetalk-{resolution.replace('p','')}",
             "--sample_steps",                str(steps),
-            "--num_persistent_param_in_dit", "0",
+            "--num_persistent_param_in_dit", "7",        # keep 7 DiT layers on GPU — big speed boost vs 0
             "--mode",                        "streaming",
             "--motion_frame",                str(motion_f),
             "--save_file",                   str(tmpdir / "output"),
-            "--t5_cpu",       # keeps UMT5 text encoder on CPU (~10 GB saved on GPU)
+            "--t5_cpu",                                   # keeps UMT5 text encoder on CPU (~10 GB saved on GPU)
+            "--use_teacache",                             # skip redundant attention computation (~2-3x faster)
+            "--teacache_thresh",             "0.2",       # default safe threshold
         ]
 
         print(f"[handler] Running InfiniteTalk (steps={steps}, res={resolution})...", flush=True)
