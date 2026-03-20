@@ -75,6 +75,6 @@ ENV HF_HOME=/runpod-volume/hf_cache
 ENV TRANSFORMERS_CACHE=/runpod-volume/hf_cache
 ENV HF_HUB_OFFLINE=1
 ENV TRANSFORMERS_OFFLINE=1
-ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,max_split_size_mb:512
 
 CMD ["python", "/handler.py"]
